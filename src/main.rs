@@ -55,7 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
         let obj_file = &m[2..];
         let obj_path = format!(".git/objects/{}/{}", obj_folder, obj_file);
         let o = fs::File::create(obj_path);
-        println!("{:?}", m);
+        print!("{:?}", m);
         
 
     } 
