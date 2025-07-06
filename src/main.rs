@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::env;
-use std::ffi::CStr;
+// use std::ffi::CStr;
 #[allow(unused_imports)]
 use std::fs;
 use std::fs::File;
@@ -79,9 +79,9 @@ fn main() -> Result<(), anyhow::Error> {
         let mut d = BufReader::new(d);
         let mut header= Vec::new();
         d.read_until(0, &mut header)?;
-        let header_s = CStr::from_bytes_with_nul(&header)?;
-        let header_s = header_s.to_str()?;
-        print!("{}\n", header_s);
+        // let header_s = CStr::from_bytes_with_nul(&header)?;
+        // let header_s = header_s.to_str()?;
+        // print!("{}\n", header_s);
         loop {
             let mut entry = Vec::new();
             let n = d.read_until(0, &mut entry)?;
