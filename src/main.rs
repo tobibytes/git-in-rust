@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use std::env;
 use std::ffi::CStr;
+use std::fmt::format;
 use std::io::stdout;
 #[allow(unused_imports)]
 use std::fs;
@@ -8,8 +9,10 @@ use std::fs::File;
 use std::io::prelude::*;
 use anyhow::Context;
 use anyhow::Ok;
-use flate2::read::ZlibDecoder;
+use bytes::buf;
+use flate2;
 use std::io::BufReader;
+
 
 fn main() -> Result<(), anyhow::Error> {
     eprintln!("Logs from your program will appear here!");
@@ -30,24 +33,32 @@ fn main() -> Result<(), anyhow::Error> {
         let obj_hash = &obj[2..];
         let path = format!(".git/objects/{}/{}", obj_folder, obj_hash);
         let file = File::open(&path).expect("could not open file");
-        let d = ZlibDecoder::new(file);
+
+        let d = flate2::read::ZlibDecoder::new(file);
         let mut d = BufReader::new(d);
-        let mut header_s = Vec::new();
+        let mut header = Vec::new();
         let mut full_string = String::new();
-        d.read_until(0, &mut header_s)?;
-        let header = CStr::from_bytes_with_nul(&header_s)
-        .expect("know there is exactly one nul, and it's at the end");
-        let header = header
-        .to_str()
-        .context(".git/objects file header isn't valid UTF-8")?;
+        d.read_until(0, &mut header)?;
         d.read_to_string(&mut full_string).context("reading from git objects")?;
-        let header_len = header.len();
-        // let body = &full_string[header_len..];
         print!("{}", full_string);
-  
-        
        }
     }
+    else if args[1] == "hash-object" {
+        let path = &args[3];
+        let mut f = fs::File::open(path).expect("could not open file");
+        let mut content =String::new();
+        f.read_to_string(&mut content)?;
+        let content_len =content.len();
+        let content_to_encode = format!("blob {}\0{}", content_len, content);
+        let mut m = sha1_smol::Sha1::from(&content_to_encode).digest().to_string();
+        let obj_folder = &m[..2];
+        let obj_file = &m[2..];
+        let obj_path = format!(".git/objects/{}/{}", obj_folder, obj_file);
+        let o = fs::File::create(obj_path);
+        println!("{:?}", obj_folder);
+        
+
+    } 
     else {
         println!("unknown command: {}", args[1])
     }
