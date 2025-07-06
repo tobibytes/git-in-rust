@@ -54,8 +54,11 @@ fn main() -> Result<(), anyhow::Error> {
         let obj_folder = &m[..2];
         let obj_file = &m[2..];
         let obj_path = format!(".git/objects/{}/{}", obj_folder, obj_file);
-        let mut o = fs::File::create_new(obj_path).expect("could not create path");
-        print!("{}",m);
+        let op = std::path::Path::new(&obj_path);
+        let pop = op.parent().unwrap();
+        fs::create_dir_all(pop)?;
+        fs::File::create_new(op)?;
+        print!("{}",&obj_path);
 
     } 
     else {
