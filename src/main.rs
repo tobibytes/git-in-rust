@@ -43,7 +43,7 @@ fn main() -> Result<(), anyhow::Error> {
         d.read_to_string(&mut full_string).context("reading from git objects")?;
         let header_len = header.len();
         // let body = &full_string[header_len..];
-        print!("{:?}", full_string);
+        print!("{}", full_string);
   
         
        }
