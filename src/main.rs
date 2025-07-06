@@ -42,8 +42,8 @@ fn main() -> Result<(), anyhow::Error> {
         .context(".git/objects file header isn't valid UTF-8")?;
         d.read_to_string(&mut full_string).context("reading from git objects")?;
         let header_len = header.len();
-        let body = &full_string[header_len..];
-        print!("{:?}", body);
+        // let body = &full_string[header_len..];
+        print!("{:?}", full_string);
   
         
        }
