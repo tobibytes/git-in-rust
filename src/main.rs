@@ -37,7 +37,7 @@ fn main() -> Result<(), anyhow::Error> {
         let mut full_string = String::new();
         d.read_until(0, &mut header)?;
         d.read_to_string(&mut full_string).context("reading from git objects")?;
-        // print!("{}", full_string);
+        print!("{}", full_string);
        }
     }
     else if args[1] == "hash-object" {
