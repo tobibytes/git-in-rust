@@ -58,7 +58,7 @@ fn main() -> Result<(), anyhow::Error> {
         let pop = op.parent().unwrap();
         fs::create_dir_all(pop)?;
         fs::File::create_new(op)?;
-        print!("{}",&obj_path);
+        print!("{}",m);
 
     } 
     else {
