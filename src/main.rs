@@ -1,11 +1,10 @@
 #[allow(unused_imports)]
 use std::env;
-use std::ffi::CStr;
+use std::io::stdout;
 #[allow(unused_imports)]
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::Read;
 use anyhow::Context;
 use anyhow::Ok;
 use flate2::read::ZlibDecoder;
@@ -32,10 +31,11 @@ fn main() -> Result<(), anyhow::Error> {
         let file = File::open(&path).expect("could not open file");
         let d = ZlibDecoder::new(file);
         let mut d = BufReader::new(d);
-        let mut s = Vec::new();
-        d.read_until(0, &mut s).context("reading from git objects")?;
-        let header = CStr::from_bytes_with_nul(&s);
-        println!("{:?}", header);
+        let mut s = String::new();
+        d.read_to_string(&mut s).context("reading from git objects")?;
+        print!("{}", s);
+  
+        
        }
     }
     else {
