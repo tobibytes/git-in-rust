@@ -50,7 +50,7 @@ fn main() -> Result<(), anyhow::Error> {
         f.read_to_string(&mut content)?;
         let content_len =content.len();
         let content_to_encode = format!("blob {}\0{}", content_len, content);
-        let m = sha1_smol::Sha1::from(&content_to_encode).digest().to_string();
+        let mut m = sha1_smol::Sha1::from(&content_to_encode).digest().to_string();
         let obj_folder = &m[..2];
         let obj_file = &m[2..];
         let obj_path = format!(".git/objects/{}/{}", obj_folder, obj_file);
