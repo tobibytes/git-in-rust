@@ -1,8 +1,5 @@
 #[allow(unused_imports)]
 use std::env;
-use std::ffi::CStr;
-use std::fmt::format;
-use std::io::stdout;
 #[allow(unused_imports)]
 use std::fs;
 use std::fs::File;
@@ -57,7 +54,10 @@ fn main() -> Result<(), anyhow::Error> {
         let op = std::path::Path::new(&obj_path);
         let pop = op.parent().unwrap();
         fs::create_dir_all(pop)?;
-        fs::File::create_new(op)?;
+        let of = fs::File::create_new(op)?;
+        let mut encoder = flate2::write::ZlibEncoder::new(of, flate2::Compression::default());
+        encoder.write_all(content_to_encode.as_bytes())?;
+        encoder.finish()?;
         print!("{}",m);
 
     } 
