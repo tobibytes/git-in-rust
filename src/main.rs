@@ -1,21 +1,45 @@
 #[allow(unused_imports)]
 use std::env;
+use std::ffi::CStr;
 #[allow(unused_imports)]
 use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::Read;
+use anyhow::Context;
+use anyhow::Ok;
+use flate2::read::ZlibDecoder;
+use std::io::BufReader;
 
-fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
+fn main() -> Result<(), anyhow::Error> {
     eprintln!("Logs from your program will appear here!");
-
-    // Uncomment this block to pass the first stage
     let args: Vec<String> = env::args().collect();
     if args[1] == "init" {
         fs::create_dir(".git").unwrap();
         fs::create_dir(".git/objects").unwrap();
         fs::create_dir(".git/refs").unwrap();
         fs::write(".git/HEAD", "ref: refs/heads/main\n").unwrap();
-        println!("Initialized git directory")
-    } else {
+        println!("Initialized git directory");
+    }
+
+    else if args[1] == "cat-file" {
+       let obj_type = &args[2];
+       let obj = &args[3];
+       if obj_type == "-p" {
+        let obj_folder = &obj[..2];
+        let obj_hash = &obj[2..];
+        let path = format!(".git/objects/{}/{}", obj_folder, obj_hash);
+        let file = File::open(&path).expect("could not open file");
+        let d = ZlibDecoder::new(file);
+        let mut d = BufReader::new(d);
+        let mut s = Vec::new();
+        d.read_until(0, &mut s).context("reading from git objects")?;
+        let header = CStr::from_bytes_with_nul(&s);
+        println!("{:?}", header);
+       }
+    }
+    else {
         println!("unknown command: {}", args[1])
     }
+    Ok(())
 }
