@@ -54,8 +54,8 @@ fn main() -> Result<(), anyhow::Error> {
         let obj_folder = &m[..2];
         let obj_file = &m[2..];
         let obj_path = format!(".git/objects/{}/{}", obj_folder, obj_file);
+        let mut o = fs::File::create(obj_path).expect("could not create path")?;
         print!("{}",m);
-        let o = fs::File::create(obj_path).expect("could not create path");
 
     } 
     else {
