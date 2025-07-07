@@ -133,6 +133,7 @@ fn write_tree(entry: &Path)-> String {
     let items_to_ignore = Vec::from([".git", "target"]);
     let mut full_string = String::from("");
     let code = 40000;
+    print!("{:?}", entry.file_name().unwrap());
     let folder_name = entry.file_name().unwrap().to_str().unwrap();
     let entries = entry.read_dir().unwrap();
     for en in entries {
