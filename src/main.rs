@@ -184,7 +184,9 @@ fn main() -> Result<(), anyhow::Error> {
         ls_tree(tree_hash, name_only)?;
     }
     else if args[1] == "write-tree" {
-        let outer_hash = write_tree(&Path::new("./"));
+        let a_txt = Path::new("a.txt");
+        let apop = a_txt.parent().unwrap();
+        let outer_hash = write_tree(&apop);
         print!("{}", outer_hash);
     }
     else {
