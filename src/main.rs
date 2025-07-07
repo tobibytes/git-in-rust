@@ -130,10 +130,11 @@ fn write_dir_tree(full_string:  &String, folder_name: &str, code: i32) -> String
     format!("{} {}\\0{}", code, folder_name, m)
 }
 fn write_tree(entry: &Path)-> String {
+    println!("start");
     let items_to_ignore = Vec::from([".git", "target"]);
     let mut full_string = String::from("");
     let code = 40000;
-    print!("{:?}", entry.file_name());
+    print!("{}", entry.display());
     let folder_name = entry.file_name().unwrap().to_str().unwrap();
     let entries = entry.read_dir().unwrap();
     for en in entries {
@@ -184,10 +185,8 @@ fn main() -> Result<(), anyhow::Error> {
         ls_tree(tree_hash, name_only)?;
     }
     else if args[1] == "write-tree" {
-        let a_txt = Path::new("a.txt");
-        let apop = a_txt.parent().unwrap();
-        let outer_hash = write_tree(&apop);
-        print!("{}", outer_hash);
+        let outer_hash = write_tree(&Path::new("../"));
+        print!("result: {}", outer_hash);
     }
     else {
         println!("unknown command: {}", args[1])
