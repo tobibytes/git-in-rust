@@ -167,7 +167,7 @@ fn write_tree(entry: &Path)-> Vec<u8> {
             let folder_sha = write_dir_tree(&f_bytes);
             let mut entry_b = format!("{} {}\0", code, f_path.file_name().unwrap().to_str().unwrap()).into_bytes();
             entry_b.extend_from_slice(&folder_sha);
-            full_bytes.extend_from_slice(&entry_b);
+            entries_vec.push((en.file_name().to_str().unwrap().to_owned(), entry_b));
         }
     }
     entries_vec.sort_by(|a, b| a.0.cmp(&b.0));
