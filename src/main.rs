@@ -201,7 +201,7 @@ fn main() -> Result<(), anyhow::Error> {
         ls_tree(tree_hash, name_only)?;
     }
     else if args[1] == "write-tree" {
-        let outer_sha = write_dir_tree(&write_tree(&Path::new("./")));
+        let outer_sha = write_dir_tree(&write_tree(&Path::new("../")));
         let outer_hex = outer_sha.iter().map(|b| format!("{:02x}", b)).collect::<String>(); 
         print!("{}", outer_hex)
     }
