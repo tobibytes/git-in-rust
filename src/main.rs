@@ -150,14 +150,16 @@ fn write_tree(entry: &Path)-> Vec<u8> {
     let mut full_bytes = Vec::new();
     let code = 40000;
     let entries = entry.read_dir().unwrap();
+    let mut entries_vec = Vec::new();
     for en in entries {
-       let f_path = en.unwrap().path();
+        let en = en.unwrap();
+       let f_path = en.path();
         if ignore_item(&items_to_ignore, f_path.file_name().unwrap().to_str().unwrap()) {
             continue;
         }
         if f_path.is_file() {
-            let line = hash_file(&f_path);
-            full_bytes.extend_from_slice(&line);
+            let line_bytes = hash_file(&f_path);
+            entries_vec.push((en.file_name().to_str().unwrap().to_owned(), line_bytes));
             // print!("{}", full_string);
         }
         else if f_path.is_dir(){
@@ -167,6 +169,11 @@ fn write_tree(entry: &Path)-> Vec<u8> {
             entry_b.extend_from_slice(&folder_sha);
             full_bytes.extend_from_slice(&entry_b);
         }
+    }
+    entries_vec.sort_by(|a, b| a.0.cmp(&b.0));
+    for (_, entry_bytes) in entries_vec {
+    
+        full_bytes.extend_from_slice(&entry_bytes);
     }
     return full_bytes;
 
