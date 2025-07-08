@@ -12,3 +12,4 @@ flate2 = { version = "1.0.17", features = ["zlib-rs"], default-features = false 
 thiserror = "2.0.12"                             # error handling
 serde = "1.0.219"
 sha1_smol = "1.0.1"
+hex = "0.4"

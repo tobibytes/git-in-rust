@@ -33,6 +33,10 @@ dependencies = [
  "anyhow",
  "bytes",
  "flate2",
+<<<<<<< HEAD
+ "hex",
+=======
+>>>>>>> 9eab9aaff045e4d3a1d0386de40f86749358790e
  "serde",
  "sha1_smol",
  "thiserror",
@@ -59,6 +63,15 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+=======
+>>>>>>> 9eab9aaff045e4d3a1d0386de40f86749358790e
 name = "libz-rs-sys"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
