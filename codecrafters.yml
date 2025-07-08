@@ -2,15 +2,8 @@
 #
 # These can be VERY verbose, so we suggest turning them off
 # unless you really need them.
-<<<<<<< HEAD
+
 debug: true 
-=======
-<<<<<<< HEAD
-debug: true 
-=======
-debug: false
->>>>>>> 9eab9aaff045e4d3a1d0386de40f86749358790e
->>>>>>> main
 
 # Use this to change the Rust version used to run your code
 # on Codecrafters.
