@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::env;
-use std::ffi::CStr;
+// use std::ffi::CStr;
 #[allow(unused_imports)]
 use std::fs;
 use std::fs::File;
@@ -36,7 +36,6 @@ fn cat_file(full_hash: &String) -> Result<String, anyhow::Error> {
     let mut full_string = String::new();
     d.read_until(0, &mut header).context("could not read header byte")?;
     d.read_to_string(&mut full_string).context("reading from git objects")?;
-    // print!("{}", full_string);
     Ok(full_string) 
 }
 fn hash_object(file_name: &str) -> Result<[u8; 20], anyhow::Error> {
@@ -58,14 +57,12 @@ fn hash_object(file_name: &str) -> Result<[u8; 20], anyhow::Error> {
     let mut encoder = flate2::write::ZlibEncoder::new(of, flate2::Compression::default());
     encoder.write_all(content_to_encode.as_bytes())?;
     encoder.finish()?;
-    // print!("{}",m);
     Ok(m.bytes())
 }
 
 fn hash_file(path: &Path) -> Vec<u8> {
     let code = 100644;
     let file_name = path.file_name().unwrap().to_str().unwrap();
-    //code filename hash
     let obj_sha = hash_object(&String::from(path.to_str().unwrap())).unwrap();
     let mut b = Vec::new();
     b.extend_from_slice(format!("{} {}\0", code, file_name).as_bytes());
@@ -82,7 +79,7 @@ fn ls_tree(tree_hash: &str, name_only: bool) -> Result<String, anyhow::Error> {
         let mut d = BufReader::new(d);
         let mut header= Vec::new();
         d.read_until(0, &mut header)?;
-        let header_s = CStr::from_bytes_with_nul(&header)?;
+        // let header_s = CStr::from_bytes_with_nul(&header)?;
         // let header_s = header_s.to_str()?;
         // print!("{} \0\n", header_s);
         let mut full_string = String::from("");
@@ -122,7 +119,6 @@ fn ls_tree(tree_hash: &str, name_only: bool) -> Result<String, anyhow::Error> {
                 full_string.push_str(&format!("{} {}\0{}\n", mode, file_name, sha_hex));
             }
         }
-        // print!("{}", full_string);
          Ok(full_string)
 }
 fn write_dir_tree(full_bytes:  &Vec<u8>) -> [u8;20] {
@@ -194,7 +190,7 @@ fn main() -> Result<(), anyhow::Error> {
        if args[2] == "-w" {
         let obj_sha = &hash_object(&args[3])?;
         let obj_hex = obj_sha.iter().map(|b| format!("{:02x}", b)).collect::<String>();
-        print!("{:?}", obj_hex);
+        print!("{}", obj_hex);
        }
     } 
     else if args[1] == "ls-tree" {
