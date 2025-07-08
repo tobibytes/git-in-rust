@@ -36,7 +36,7 @@ fn cat_file(full_hash: &String) -> Result<String, anyhow::Error> {
     let mut full_string = String::new();
     d.read_until(0, &mut header).context("could not read header byte")?;
     d.read_to_string(&mut full_string).context("reading from git objects")?;
-    print!("{}", full_string);
+    // print!("{}", full_string);
     Ok(full_string) 
 }
 fn hash_object(file_name: &str) -> Result<[u8; 20], anyhow::Error> {
@@ -122,7 +122,7 @@ fn ls_tree(tree_hash: &str, name_only: bool) -> Result<String, anyhow::Error> {
                 full_string.push_str(&format!("{} {}\0{}\n", mode, file_name, sha_hex));
             }
         }
-        print!("{}", full_string);
+        // print!("{}", full_string);
          Ok(full_string)
 }
 fn write_dir_tree(full_bytes:  &Vec<u8>) -> [u8;20] {
@@ -187,12 +187,12 @@ fn main() -> Result<(), anyhow::Error> {
        let obj_type = &args[2];
        let obj = &args[3];
        if obj_type == "-p" {
-        cat_file(obj)?;
+        print!("{}", cat_file(obj)?);
        }
     }
     else if args[1] == "hash-object" {
        if args[2] == "-w" {
-        hash_object(&args[3])?;
+        print!("{:?}", &hash_object(&args[3])?);
        }
     } 
     else if args[1] == "ls-tree" {
@@ -205,7 +205,7 @@ fn main() -> Result<(), anyhow::Error> {
         else {
             tree_hash = &args[2];
         }
-        ls_tree(tree_hash, name_only)?;
+        print!("{}", ls_tree(tree_hash, name_only)?);
     }
     else if args[1] == "write-tree" {
         let outer_sha = write_dir_tree(&write_tree(&Path::new("./")));
