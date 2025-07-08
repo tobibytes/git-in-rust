@@ -192,7 +192,9 @@ fn main() -> Result<(), anyhow::Error> {
     }
     else if args[1] == "hash-object" {
        if args[2] == "-w" {
-        print!("{:?}", &hash_object(&args[3])?);
+        let obj_sha = &hash_object(&args[3])?;
+        let obj_hex = obj_sha.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+        print!("{:?}", obj_hex);
        }
     } 
     else if args[1] == "ls-tree" {
