@@ -259,10 +259,16 @@ fn write_pack_objects(git_dir: &str, pack_data: &[u8]) -> Result<()> {
 }
 
 /// Checkout working tree.
-fn checkout_tree(target_dir: &str, tree_sha: &str) -> Result<()> {
-    // Read the tree object
-    let tree_path = format!("{}/.git/objects/{}/{}", target_dir, &tree_sha[..2], &tree_sha[2..]);
-    let file = fs::File::open(&tree_path)?;
+fn checkout_tree(target_dir: &str, commit_sha: &str) -> Result<()> {
+    // Read the commit object to get the tree
+    let commit_path = format!(
+        "{}/.git/objects/{}/{}",
+        target_dir,
+        &commit_sha[..2],
+        &commit_sha[2..]
+    );
+    let file = fs::File::open(&commit_path)
+        .map_err(|_| GitError::NotFound(commit_path))?;
     let decoder = flate2::read::ZlibDecoder::new(file);
     let mut reader = std::io::BufReader::new(decoder);
 
@@ -270,17 +276,110 @@ fn checkout_tree(target_dir: &str, tree_sha: &str) -> Result<()> {
     use std::io::BufRead;
     reader.read_until(0, &mut header)?;
 
-    // Parse tree and check out files
-    checkout_tree_entries(target_dir, &mut reader)?;
+    // Read commit content
+    let mut content = Vec::new();
+    reader.read_to_end(&mut content)?;
 
-    Ok(())
+    let commit_str = String::from_utf8(content)?;
+    
+    // Extract tree SHA from commit
+    let tree_sha = commit_str
+        .lines()
+        .find(|line| line.starts_with("tree "))
+        .and_then(|line| line.split_whitespace().nth(1))
+        .ok_or(GitError::Other("No tree found in commit".to_string()))?;
+
+    // Checkout the tree
+    checkout_tree_recursive(target_dir, tree_sha, "")
 }
 
 /// Recursively checkout tree entries.
-fn checkout_tree_entries(target_dir: &str, reader: &mut std::io::BufReader<flate2::read::ZlibDecoder<fs::File>>) -> Result<()> {
-    use std::io::Read;
-    let mut data = Vec::new();
-    reader.read_to_end(&mut data)?;
-    // TODO: Parse and checkout entries
+fn checkout_tree_recursive(target_dir: &str, tree_sha: &str, prefix: &str) -> Result<()> {
+    // Read the tree object
+    let tree_path = format!(
+        "{}/.git/objects/{}/{}",
+        target_dir,
+        &tree_sha[..2],
+        &tree_sha[2..]
+    );
+    let file = fs::File::open(&tree_path)
+        .map_err(|_| GitError::NotFound(tree_path))?;
+    let decoder = flate2::read::ZlibDecoder::new(file);
+    let mut reader = std::io::BufReader::new(decoder);
+
+    let mut header = Vec::new();
+    use std::io::BufRead;
+    reader.read_until(0, &mut header)?;
+
+    // Parse tree entries
+    let mut tree_data = Vec::new();
+    reader.read_to_end(&mut tree_data)?;
+
+    let mut pos = 0;
+    while pos < tree_data.len() {
+        // Find the null terminator after mode and name
+        let null_pos = tree_data[pos..]
+            .iter()
+            .position(|&b| b == 0)
+            .ok_or(GitError::Other("Malformed tree entry".to_string()))?;
+
+        let header_str = String::from_utf8(tree_data[pos..pos + null_pos].to_vec())?;
+        let parts: Vec<&str> = header_str.split_whitespace().collect();
+
+        if parts.len() != 2 {
+            return Err(GitError::Other("Invalid tree entry header".to_string()));
+        }
+
+        let mode = parts[0];
+        let name = parts[1];
+
+        pos += null_pos + 1;
+
+        // Read 20-byte SHA1 hash
+        if pos + 20 > tree_data.len() {
+            return Err(GitError::Other("Truncated SHA1 hash".to_string()));
+        }
+
+        let sha_bytes = &tree_data[pos..pos + 20];
+        let sha_hex = sha_bytes
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+        pos += 20;
+
+        let file_path = format!("{}/{}{}", prefix, if prefix.is_empty() { "" } else { "/" }, name);
+        let full_path = format!("{}/{}", target_dir, file_path);
+
+        if mode == "40000" {
+            // Directory
+            fs::create_dir_all(&full_path)?;
+            checkout_tree_recursive(target_dir, &sha_hex, &file_path)?;
+        } else {
+            // File - read blob and write
+            let blob_path = format!(
+                "{}/.git/objects/{}/{}",
+                target_dir,
+                &sha_hex[..2],
+                &sha_hex[2..]
+            );
+            let blob_file = fs::File::open(&blob_path)
+                .map_err(|_| GitError::NotFound(blob_path))?;
+            let decoder = flate2::read::ZlibDecoder::new(blob_file);
+            let mut blob_reader = std::io::BufReader::new(decoder);
+
+            // Skip header
+            let mut blob_header = Vec::new();
+            use std::io::BufRead;
+            blob_reader.read_until(0, &mut blob_header)?;
+
+            // Write blob content to file
+            if let Some(parent) = Path::new(&full_path).parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let mut out_file = fs::File::create(&full_path)?;
+            std::io::copy(&mut blob_reader, &mut out_file)?;
+        }
+    }
+
     Ok(())
 }
