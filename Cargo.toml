@@ -1,0 +1,15 @@
+[package]
+name = "codecrafters-git"
+version = "0.1.0"
+authors = ["Codecrafters <hello@codecrafters.io>"]
+edition = "2021"
+rust-version = "1.80"
+
+[dependencies]
+anyhow = "1.0.68"                                # error handling
+bytes = "1.3.0"                                  # helps manage buffers
+flate2 = { version = "1.0.17", features = ["zlib-rs"], default-features = false }                             # compression
+thiserror = "2.0.12"                             # error handling
+serde = "1.0.219"
+sha1_smol = "1.0.1"
+hex = "0.4"
