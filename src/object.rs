@@ -150,6 +150,7 @@ impl CommitMetadata {
         bytes.extend_from_slice(format!("committer {}\n", self.committer).as_bytes());
         bytes.extend_from_slice(b"\n");
         bytes.extend_from_slice(self.message.as_bytes());
+        bytes.extend_from_slice(b"\n");
 
         bytes
     }
