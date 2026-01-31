@@ -19,28 +19,42 @@ pub async fn clone(url: &str, target_dir: &str) -> Result<()> {
     let git_dir = format!("{}/.git", target_dir);
     fs::create_dir(&git_dir)?;
     fs::create_dir(format!("{}/.git/objects", target_dir))?;
-    fs::create_dir(format!("{}/.git/refs", target_dir))?;
-    fs::write(format!("{}/.git/HEAD", target_dir), "ref: refs/heads/main\n")?;
+    fs::create_dir(format!("{}/.git/refs/heads", target_dir))?;
 
     // Fetch repository info and objects
     let (pack_data, refs) = fetch_pack(url).await?;
 
+    // Find HEAD reference
+    let head_sha = refs.get("HEAD")
+        .or_else(|| refs.get("refs/heads/main"))
+        .or_else(|| refs.get("refs/heads/master"))
+        .ok_or(GitError::Other("No HEAD reference found".to_string()))?
+        .clone();
+
+    // Write HEAD file
+    fs::write(
+        format!("{}/.git/HEAD", target_dir),
+        format!("ref: refs/heads/main\n"),
+    )?;
+
     // Write objects from packfile
-    write_pack_objects(target_dir, &pack_data)?;
+    if !pack_data.is_empty() {
+        write_pack_objects(target_dir, &pack_data)?;
+    }
 
     // Write refs
     for (ref_name, sha) in &refs {
-        let ref_path = format!("{}/.git/{}", target_dir, ref_name);
-        if let Some(parent) = Path::new(&ref_path).parent() {
-            fs::create_dir_all(parent)?;
+        if ref_name != "HEAD" {
+            let ref_path = format!("{}/.git/{}", target_dir, ref_name);
+            if let Some(parent) = Path::new(&ref_path).parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::write(&ref_path, format!("{}\n", sha))?;
         }
-        fs::write(&ref_path, format!("{}\n", sha))?;
     }
 
     // Checkout working tree
-    if let Some(head_sha) = refs.get("refs/heads/main") {
-        checkout_tree(target_dir, head_sha)?;
-    }
+    checkout_tree(target_dir, &head_sha)?;
 
     Ok(())
 }
@@ -79,15 +93,13 @@ async fn fetch_pack(url: &str) -> Result<(Vec<u8>, std::collections::HashMap<Str
         .await
         .map_err(|e| GitError::Other(format!("Failed to upload-pack: {}", e)))?;
 
-    let mut pack_data = Vec::new();
-    let mut stream = response
-        .bytes_stream();
-    
-    use futures::stream::StreamExt;
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| GitError::Other(format!("Stream error: {}", e)))?;
-        pack_data.extend_from_slice(&chunk);
-    }
+    let body = response
+        .bytes()
+        .await
+        .map_err(|e| GitError::Other(format!("Failed to read upload-pack response: {}", e)))?;
+
+    // Extract packfile from response (skip protocol metadata)
+    let pack_data = extract_packfile_from_response(&body)?;
 
     Ok((pack_data, refs))
 }
@@ -151,6 +163,38 @@ fn parse_refs_response(data: &[u8]) -> Result<(std::collections::HashMap<String,
     }
 
     Ok((refs, pos))
+}
+
+/// Extract packfile data from upload-pack response.
+fn extract_packfile_from_response(data: &[u8]) -> Result<Vec<u8>> {
+    let mut pos = 0;
+
+    // Skip pkt-lines until we find the packfile
+    while pos < data.len() {
+        if pos + 4 > data.len() {
+            break;
+        }
+
+        let len_str = std::str::from_utf8(&data[pos..pos + 4])
+            .map_err(|_| GitError::Other("Invalid pkt-line".to_string()))?;
+        
+        let len = u16::from_str_radix(len_str, 16)
+            .map_err(|_| GitError::Other("Invalid pkt-line length".to_string()))? as usize;
+
+        if len == 0 {
+            pos += 4; // Skip flush packet
+            break;
+        }
+
+        pos += len;
+    }
+
+    // The remaining data should be the packfile
+    if pos < data.len() {
+        Ok(data[pos..].to_vec())
+    } else {
+        Err(GitError::Other("No packfile data found in response".to_string()))
+    }
 }
 
 /// Build upload-pack request.
