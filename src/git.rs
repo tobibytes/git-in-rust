@@ -291,6 +291,13 @@ pub enum GitCommand {
         /// Commit message.
         message: String,
     },
+    /// Clone repository.
+    Clone {
+        /// Repository URL.
+        url: String,
+        /// Target directory.
+        target_dir: String,
+    },
 }
 
 impl GitCommand {
@@ -384,6 +391,17 @@ impl GitCommand {
                     message,
                 })
             }
+            "clone" => {
+                if args.len() < 3 {
+                    return Err(GitError::Other(
+                        "Usage: git clone <url> <directory>".to_string(),
+                    ));
+                }
+                Ok(GitCommand::Clone {
+                    url: args[1].clone(),
+                    target_dir: args[2].clone(),
+                })
+            }
             cmd => Err(GitError::Other(format!("Unknown command: {}", cmd))),
         }
     }
@@ -422,6 +440,12 @@ impl GitCommand {
                 )?;
                 println!("{}", hash);
                 Ok(())
+            }
+            GitCommand::Clone { url, target_dir } => {
+                // Use tokio runtime for async clone
+                let rt = tokio::runtime::Runtime::new()
+                    .map_err(|e| GitError::Other(format!("Failed to create runtime: {}", e)))?;
+                rt.block_on(crate::clone::clone(url, target_dir))
             }
         }
     }

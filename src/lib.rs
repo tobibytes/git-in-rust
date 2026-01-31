@@ -6,6 +6,8 @@
 pub mod error;
 pub mod git;
 pub mod object;
+pub mod pack;
+pub mod clone;
 
 pub use error::{GitError, Result};
 pub use git::{GitCommand, GitRepository};
