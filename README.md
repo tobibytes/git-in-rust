@@ -1,68 +1,47 @@
-<<<<<<< HEAD
-# Git in rust
-=======
-<<<<<<< HEAD
-# Git in rust
-=======
-[![progress-banner](https://backend.codecrafters.io/progress/git/6c6a24f2-8d0a-43d4-9746-f0c244faee4b)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# git-in-rust
 
-This is a starting point for Rust solutions to the
-["Build Your Own Git" Challenge](https://codecrafters.io/challenges/git).
+A from-scratch implementation of Git's plumbing commands in Rust. Reads, writes, and inspects real `.git` object stores using SHA-1 hashing, zlib compression, and the on-disk Git object format — fully compatible with the actual `git` CLI.
 
-In this challenge, you'll build a small Git implementation that's capable of
-initializing a repository, creating commits and cloning a public repository.
-Along the way we'll learn about the `.git` directory, Git objects (blobs,
-commits, trees etc.), Git's transfer protocols and more.
+Built as a solution to the [CodeCrafters "Build Your Own Git"](https://codecrafters.io/challenges/git) challenge.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## What it does
 
-# Passing the first stage
+| Command | Behavior |
+| --- | --- |
+| `init` | Initializes a new `.git` directory (`objects/`, `refs/`, `HEAD`) |
+| `cat-file -p <sha>` | Pretty-prints the contents of a Git object by hash |
+| `hash-object -w <file>` | SHA-1 hashes a file, writes a zlib-compressed blob into `.git/objects/`, prints the hash |
+| `ls-tree [--name-only] <sha>` | Lists the entries of a tree object |
+| `write-tree` | Builds a tree object from the current working directory and writes it to the object store |
 
-The entry point for your Git implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+## How it works
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
+- **Object storage** — every object is `<type> <len>\0<content>`, zlib-deflated, then stored at `.git/objects/<sha[0..2]>/<sha[2..]>`.
+- **Hashing** — `sha1_smol` over the uncompressed object body produces the 40-char hex content-address.
+- **Compression** — `flate2` (zlib-rs backend) handles deflate/inflate for read and write paths.
+- **Trees** — built recursively by walking the working tree, hashing each file as a blob, then writing the parent tree.
 
-That's all!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cargo (1.87)` installed locally
-1. Run `./your_program.sh` to run your Git implementation, which is implemented
-   in `src/main.rs`. This command compiles your Rust project, so it might be
-   slow the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
-
-# Testing locally
-
-The `your_program.sh` script is expected to operate on the `.git` folder inside
-the current working directory. If you're running this inside the root of this
-repository, you might end up accidentally damaging your repository's `.git`
-folder.
-
-We suggest executing `your_program.sh` in a different folder when testing
-locally. For example:
+## Run it
 
 ```sh
-mkdir -p /tmp/testing && cd /tmp/testing
-/path/to/your/repo/your_program.sh init
+# Build
+cargo build --release
+
+# Use the wrapper script (operates on .git in the current directory)
+./your_program.sh init
+./your_program.sh hash-object -w hello.txt
+./your_program.sh cat-file -p <hash>
+./your_program.sh ls-tree --name-only <tree-sha>
+./your_program.sh write-tree
 ```
 
-To make this easier to type out, you could add a
-[shell alias](https://shapeshed.com/unix-alias/):
+> Test it inside a scratch directory, not this repo — the implementation writes into `.git/` of wherever it's run.
 
 ```sh
-alias mygit=/path/to/your/repo/your_program.sh
-
-mkdir -p /tmp/testing && cd /tmp/testing
-mygit init
+mkdir -p /tmp/git-test && cd /tmp/git-test
+/path/to/git-in-rust/your_program.sh init
 ```
->>>>>>> 9eab9aaff045e4d3a1d0386de40f86749358790e
->>>>>>> main
+
+## Stack
+
+Rust 2021 · `flate2` · `sha1_smol` · `anyhow` · `bytes`
